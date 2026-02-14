@@ -1,0 +1,69 @@
+@import url('https://fonts.cdnfonts.com/css/doge-sans');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D4A017 #1a1207;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #1a1207;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #D4A017;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #FFD700;
+}
+
+body {
+  background: #0d0a04;
+  color: #e8dcc8;
+  font-family: 'Doge Sans', system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Doge Sans', system-ui, sans-serif;
+}
+
+code, .font-mono, .data-value {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@layer utilities {
+  .glow-gold {
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+  }
+
+  .glow-gold-subtle {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.25));
+  }
+
+  .cursor-blink::after {
+    content: '▊';
+    animation: cursor-blink 1s step-end infinite;
+    color: #FFD700;
+  }
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+::selection {
+  background: rgba(255, 215, 0, 0.3);
+  color: #e8dcc8;
+}

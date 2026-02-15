@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: "DogeWatch",
     images: [
       {
-        url: "/logo/watchdog-512.png",
+        url: "/logo/doge-v2-512.png",
         width: 512,
         height: 512,
         alt: "DogeWatch Logo",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DogeWatch — Crowdsourced Medicaid Fraud Detection",
     description: "Analyze HHS Medicaid claims data, flag suspicious billing patterns, earn DOGE bounties.",
-    images: ["/logo/watchdog-512.png"],
+    images: ["/logo/doge-v2-512.png"],
   },
   icons: {
     icon: "/favicon.ico",

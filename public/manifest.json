@@ -9,22 +9,22 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/logo/watchdog-64.png",
+      "src": "/logo/doge-v2-64.png",
       "sizes": "64x64",
       "type": "image/png"
     },
     {
-      "src": "/logo/watchdog-128.png",
+      "src": "/logo/doge-v2-128.png",
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "/logo/watchdog-256.png",
+      "src": "/logo/doge-v2-256.png",
       "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "/logo/watchdog-512.png",
+      "src": "/logo/doge-v2-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

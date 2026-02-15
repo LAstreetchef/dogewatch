@@ -19,11 +19,11 @@ export function Logo({
 }: LogoProps) {
   // Pick appropriate size variant for optimization
   const getSrc = () => {
-    if (size <= 64) return '/logo/watchdog-64.png';
-    if (size <= 128) return '/logo/watchdog-128.png';
-    if (size <= 256) return '/logo/watchdog-256.png';
-    if (size <= 512) return '/logo/watchdog-512.png';
-    return '/logo/watchdog.png';
+    if (size <= 64) return '/logo/doge-v2-64.png';
+    if (size <= 128) return '/logo/doge-v2-128.png';
+    if (size <= 256) return '/logo/doge-v2-256.png';
+    if (size <= 512) return '/logo/doge-v2-512.png';
+    return '/logo/doge-v2.png';
   };
 
   return (

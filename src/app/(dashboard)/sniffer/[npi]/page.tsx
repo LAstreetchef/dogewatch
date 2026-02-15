@@ -219,9 +219,22 @@ export default function ProviderDetailPage({
                 <Plus size={16} />
                 Open Case File
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  const text = `🚨 HIGH RISK ALERT: ${provider.name} (${provider.state})\n\n` +
+                    `Anomaly Score: ${Math.round(provider.anomaly_score * 100)}%\n` +
+                    `Total Billed: ${formatCurrency(provider.total_billed)}\n` +
+                    `Specialty: ${provider.specialty || 'Unknown'}\n\n` +
+                    `Check it out on @DogeWatch 👇`;
+                  const url = `https://dogewatch.vercel.app/sniffer/${provider.npi}`;
+                  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+                  window.open(twitterUrl, '_blank', 'width=600,height=400');
+                }}
+              >
                 <Share2 size={16} />
-                Share
+                Post to X
               </Button>
               <a 
                 href={`https://npiregistry.cms.hhs.gov/provider-view/${provider.npi}`}

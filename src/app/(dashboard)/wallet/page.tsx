@@ -145,8 +145,15 @@ export default function WalletPage() {
 
   if (!wallet) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Logo size={60} sniff />
+      <div className="max-w-md mx-auto text-center py-20">
+        <Logo size={80} className="mx-auto mb-6 opacity-50" />
+        <h2 className="text-xl font-semibold text-doge-text mb-2">Wallet Not Available</h2>
+        <p className="text-doge-muted mb-6">
+          Sign in to access your DOGE wallet and start earning bounties.
+        </p>
+        <Button variant="primary" onClick={() => window.location.href = '/login?redirect=/wallet'}>
+          Sign In
+        </Button>
       </div>
     );
   }

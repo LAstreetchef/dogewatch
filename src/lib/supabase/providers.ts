@@ -1,4 +1,4 @@
-import { createClient } from './server';
+import { createClient, createServiceClient } from './server';
 import { lookupNPI, needsEnrichment } from '@/lib/npi/lookup';
 
 export interface Provider {
@@ -132,7 +132,8 @@ export async function enrichProvider(provider: Provider): Promise<Provider | nul
       return null;
     }
     
-    const supabase = await createClient();
+    // Use service client for writes (bypasses RLS)
+    const supabase = createServiceClient();
     
     const updates = {
       name: npiData.name,

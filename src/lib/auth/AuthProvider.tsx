@@ -80,9 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     // Timeout to prevent infinite loading
     const timeout = setTimeout(() => {
-      if (loading) {
+      if (mounted && loading) {
         console.warn('Auth loading timeout - forcing completion');
         setLoading(false);
       }
@@ -91,16 +93,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           await fetchProfile(session.user.id);
         }
-      } catch (err) {
+      } catch (err: any) {
+        // Ignore AbortError - happens with React StrictMode double-mount
+        if (err?.name === 'AbortError') return;
         console.error('Error getting session:', err);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -108,6 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -121,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
+      mounted = false;
       clearTimeout(timeout);
       subscription.unsubscribe();
     };

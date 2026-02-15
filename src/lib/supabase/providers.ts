@@ -1,4 +1,5 @@
 import { createClient } from './server';
+import { lookupNPI, needsEnrichment } from '@/lib/npi/lookup';
 
 export interface Provider {
   id: string;
@@ -96,7 +97,7 @@ export async function searchProviders(params: ProviderSearchParams): Promise<{
   };
 }
 
-export async function getProviderByNPI(npi: string): Promise<Provider | null> {
+export async function getProviderByNPI(npi: string, autoEnrich = true): Promise<Provider | null> {
   const supabase = await createClient();
   
   const { data, error } = await supabase
@@ -110,7 +111,54 @@ export async function getProviderByNPI(npi: string): Promise<Provider | null> {
     throw error;
   }
   
+  // Auto-enrich if needed
+  if (data && autoEnrich && needsEnrichment(data)) {
+    const enriched = await enrichProvider(data);
+    return enriched || data;
+  }
+  
   return data;
+}
+
+/**
+ * Enrich a provider with NPI Registry data and update the database
+ */
+export async function enrichProvider(provider: Provider): Promise<Provider | null> {
+  try {
+    const npiData = await lookupNPI(provider.npi);
+    
+    if (!npiData) {
+      console.log(`No NPI data found for ${provider.npi}`);
+      return null;
+    }
+    
+    const supabase = await createClient();
+    
+    const updates = {
+      name: npiData.name,
+      state: npiData.state,
+      specialty: npiData.specialty,
+      data_updated_at: new Date().toISOString(),
+    };
+    
+    const { data, error } = await supabase
+      .from('providers')
+      .update(updates)
+      .eq('id', provider.id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Provider enrichment update error:', error);
+      return null;
+    }
+    
+    console.log(`✅ Enriched provider ${provider.npi}: ${npiData.name} (${npiData.state})`);
+    return data;
+  } catch (error) {
+    console.error('Provider enrichment error:', error);
+    return null;
+  }
 }
 
 export async function getProviderById(id: string): Promise<Provider | null> {

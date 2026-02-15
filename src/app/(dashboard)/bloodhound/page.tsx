@@ -70,8 +70,16 @@ export default function BloodhoundPage() {
     scrollToBottom();
   }, [messages]);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const handleSubmit = async (query: string) => {
     if (!query.trim() || loading) return;
+
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -90,6 +98,7 @@ export default function BloodhoundPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
+        signal: abortControllerRef.current.signal,
       });
 
       const data = await response.json();
@@ -103,7 +112,11 @@ export default function BloodhoundPage() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore abort errors
+      if (error?.name === 'AbortError') {
+        return;
+      }
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -111,10 +124,19 @@ export default function BloodhoundPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;

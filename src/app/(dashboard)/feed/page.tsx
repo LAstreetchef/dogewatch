@@ -121,29 +121,24 @@ export default function FeedPage() {
 function ComposeBox() {
   return (
     <Panel>
-      <div className="flex gap-4">
-        <Logo size={40} className="flex-shrink-0" />
-        <div className="flex-1">
-          <textarea
-            placeholder="Share a finding, analysis, or start a discussion..."
-            className="w-full bg-transparent border-none outline-none resize-none text-doge-text placeholder:text-doge-muted"
-            rows={3}
-          />
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-doge-border">
-            <div className="flex gap-2">
-              <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
-                🔍 Finding
-              </Badge>
-              <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
-                📊 Analysis
-              </Badge>
-              <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
-                💬 Discussion
-              </Badge>
-            </div>
-            <Button size="sm">Post</Button>
-          </div>
+      <textarea
+        placeholder="Share a finding, analysis, or start a discussion..."
+        className="w-full bg-transparent border-none outline-none resize-none text-doge-text placeholder:text-doge-muted"
+        rows={3}
+      />
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-doge-border">
+        <div className="flex gap-2 flex-wrap">
+          <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
+            🔍 Finding
+          </Badge>
+          <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
+            📊 Analysis
+          </Badge>
+          <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
+            💬 Discussion
+          </Badge>
         </div>
+        <Button size="sm">Post</Button>
       </div>
     </Panel>
   );

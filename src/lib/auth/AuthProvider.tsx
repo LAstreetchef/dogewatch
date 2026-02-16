@@ -115,23 +115,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const getSession = async () => {
       try {
-        console.log('[Auth] Getting session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('[Auth] Getting session via API...');
         
-        if (error) {
-          console.error('[Auth] Session error:', error);
-        }
+        // Use server-side API to get authenticated user data
+        const res = await fetch('/api/wallet/me');
+        const data = await res.json();
         
-        console.log('[Auth] Session result:', session ? `User ${session.user.id}` : 'No session');
+        console.log('[Auth] API response:', data.user ? `User ${data.user.id}` : 'No user');
         
         if (!mounted) return;
         
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          console.log('[Auth] Fetching profile for:', session.user.id);
-          await fetchProfile(session.user.id);
+        if (data.user) {
+          setUser(data.user);
+          setSession({ user: data.user } as any);
+          
+          if (data.profile) {
+            console.log('[Auth] Profile loaded:', data.profile.handle);
+            setProfile(data.profile);
+          }
+          
+          if (data.wallet) {
+            console.log('[Auth] Wallet loaded:', data.wallet.id);
+            setWallet(data.wallet);
+          }
+        } else {
+          console.log('[Auth] No authenticated user');
+          setUser(null);
+          setSession(null);
         }
       } catch (err: any) {
         // Ignore AbortError - happens with React StrictMode double-mount

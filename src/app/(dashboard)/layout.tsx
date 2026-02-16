@@ -54,7 +54,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-transparent flex relative z-10">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-doge-border bg-doge-panel/95 backdrop-blur-sm">
+      <aside className="hidden md:flex flex-col w-64 border-r border-doge-border bg-doge-panel/95 backdrop-blur-sm relative z-20">
         {/* Logo */}
         <div className="p-4 border-b border-doge-border">
           <Link href="/">
@@ -115,7 +115,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen relative z-20">
         {/* Header */}
         <header className="sticky top-0 z-40 bg-doge-panel/90 backdrop-blur-sm border-b border-doge-border">
           <div className="flex items-center justify-between px-4 py-3">

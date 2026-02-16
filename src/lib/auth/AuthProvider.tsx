@@ -59,11 +59,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(profileData);
       }
 
-      const { data: walletData, error: walletError } = await supabase
+      let { data: walletData, error: walletError } = await supabase
         .from('wallets')
         .select('*')
         .eq('user_id', userId)
         .single();
+      
+      // Auto-create wallet if it doesn't exist
+      if (walletError && walletError.code === 'PGRST116') {
+        const { data: newWallet, error: createError } = await supabase
+          .from('wallets')
+          .insert({
+            user_id: userId,
+            balance: 0,
+            total_earned: 0,
+            total_spent: 0,
+          })
+          .select()
+          .single();
+        
+        if (newWallet && !createError) {
+          walletData = newWallet;
+          walletError = null;
+        }
+      }
       
       if (walletData && !walletError) {
         setWallet(walletData);

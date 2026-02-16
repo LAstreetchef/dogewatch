@@ -52,9 +52,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-doge-bg flex">
+    <div className="min-h-screen bg-transparent flex relative z-10">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-doge-border bg-doge-panel">
+      <aside className="hidden md:flex flex-col w-64 border-r border-doge-border bg-doge-panel/95 backdrop-blur-sm">
         {/* Logo */}
         <div className="p-4 border-b border-doge-border">
           <Link href="/">
@@ -117,7 +117,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-doge-bg/95 backdrop-blur border-b border-doge-border">
+        <header className="sticky top-0 z-40 bg-doge-panel/90 backdrop-blur-sm border-b border-doge-border">
           <div className="flex items-center justify-between px-4 py-3">
             {/* Mobile menu button */}
             <button
@@ -193,7 +193,7 @@ export default function DashboardLayout({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 bg-transparent">
           {children}
         </main>
       </div>

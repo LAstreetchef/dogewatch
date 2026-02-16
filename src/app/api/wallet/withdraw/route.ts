@@ -1,3 +1,6 @@
+// Force Node.js runtime for crypto modules
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { deriveAddress } from '@/lib/dogecoin/wallet';

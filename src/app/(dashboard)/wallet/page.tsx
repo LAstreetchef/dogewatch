@@ -131,25 +131,17 @@ export default function WalletPage() {
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || !withdrawAddress || !user) return;
+    console.log('[Withdraw] Starting...', { withdrawAmount, withdrawAddress, user: user?.id });
+    
+    if (!withdrawAmount || !withdrawAddress || !user) {
+      alert('Please enter amount and address');
+      return;
+    }
     
     const amount = parseFloat(withdrawAmount);
-    if (isNaN(amount) || amount <= 0) {
-      alert('Invalid amount');
-      return;
-    }
-
-    if (amount < 10) {
-      alert('Minimum withdrawal is 10 DOGE');
-      return;
-    }
-
-    // Clean and validate address
     const cleanAddress = withdrawAddress.trim();
-    if (!cleanAddress.startsWith('D') || cleanAddress.length !== 34) {
-      alert(`Invalid DOGE address format.\nGot: "${cleanAddress}" (${cleanAddress.length} chars)\nExpected: starts with D, 34 characters`);
-      return;
-    }
+    
+    console.log('[Withdraw] Parsed:', { amount, cleanAddress, len: cleanAddress.length });
 
     if (!confirm(`Send ${amount} DOGE to ${cleanAddress}?\n\nNetwork fee: ~1 DOGE\nThis cannot be undone.`)) {
       return;

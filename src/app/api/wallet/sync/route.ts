@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
         balance: balanceDoge,
         total_earned: totalReceivedDoge,
         total_spent: totalSentDoge,
-        updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
 

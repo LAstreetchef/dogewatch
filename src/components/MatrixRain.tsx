@@ -1,10 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 interface MatrixRainProps {
   fullMode?: boolean;
   onToggle?: () => void;
+}
+
+interface FallingDoge {
+  x: number;
+  y: number;
+  speed: number;
+  size: number;
+  opacity: number;
+  rotation: number;
+  rotationSpeed: number;
 }
 
 // Doge-themed characters: Ð, $, numbers, symbols
@@ -14,6 +24,31 @@ export default function MatrixRain({ fullMode = false, onToggle }: MatrixRainPro
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const dropsRef = useRef<number[]>([]);
+  const dogesRef = useRef<FallingDoge[]>([]);
+  const dogeImageRef = useRef<HTMLImageElement | null>(null);
+  const frameCountRef = useRef(0);
+
+  // Load doge image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/logo/doge-v2-64.png';
+    img.onload = () => {
+      dogeImageRef.current = img;
+    };
+  }, []);
+
+  const spawnDoge = useCallback((width: number) => {
+    const size = 24 + Math.random() * 32; // 24-56px
+    dogesRef.current.push({
+      x: Math.random() * width,
+      y: -size,
+      speed: 0.5 + Math.random() * 1.5,
+      size,
+      opacity: 0.3 + Math.random() * 0.5,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.05,
+    });
+  }, []);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const fontSize = 14;
@@ -24,7 +59,7 @@ export default function MatrixRain({ fullMode = false, onToggle }: MatrixRainPro
       dropsRef.current = Array(columns).fill(0).map(() => Math.random() * -100);
     }
 
-    // Fade effect - more transparent in subtle mode
+    // Fade effect
     ctx.fillStyle = fullMode ? 'rgba(13, 10, 4, 0.05)' : 'rgba(13, 10, 4, 0.1)';
     ctx.fillRect(0, 0, width, height);
 
@@ -37,15 +72,12 @@ export default function MatrixRain({ fullMode = false, onToggle }: MatrixRainPro
     ctx.fillStyle = gradient;
     ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
 
+    // Draw character drops
     for (let i = 0; i < dropsRef.current.length; i++) {
-      // Random character
       const char = CHARS[Math.floor(Math.random() * CHARS.length)];
-      
-      // Draw character
       const x = i * fontSize;
       const y = dropsRef.current[i] * fontSize;
       
-      // Brighter leading character
       if (fullMode) {
         ctx.fillStyle = 'rgba(255, 255, 200, 1)';
         ctx.fillText(char, x, y);
@@ -54,15 +86,51 @@ export default function MatrixRain({ fullMode = false, onToggle }: MatrixRainPro
         ctx.fillText(char, x, y);
       }
 
-      // Reset drop randomly when it goes off screen
       if (y > height && Math.random() > 0.975) {
         dropsRef.current[i] = 0;
       }
       
-      // Move drop down (slower for readability)
       dropsRef.current[i] += fullMode ? 0.4 : 0.2;
     }
-  }, [fullMode]);
+
+    // Spawn new doges periodically
+    frameCountRef.current++;
+    const spawnRate = fullMode ? 60 : 180; // More frequent in full mode
+    if (frameCountRef.current % spawnRate === 0 && dogesRef.current.length < 15) {
+      spawnDoge(width);
+    }
+
+    // Draw and update falling doges
+    if (dogeImageRef.current) {
+      dogesRef.current = dogesRef.current.filter(doge => {
+        // Update position
+        doge.y += doge.speed;
+        doge.rotation += doge.rotationSpeed;
+
+        // Remove if off screen
+        if (doge.y > height + doge.size) {
+          return false;
+        }
+
+        // Draw doge with rotation
+        ctx.save();
+        ctx.translate(doge.x + doge.size / 2, doge.y + doge.size / 2);
+        ctx.rotate(doge.rotation);
+        ctx.globalAlpha = fullMode ? doge.opacity + 0.3 : doge.opacity;
+        ctx.drawImage(
+          dogeImageRef.current!,
+          -doge.size / 2,
+          -doge.size / 2,
+          doge.size,
+          doge.size
+        );
+        ctx.restore();
+        ctx.globalAlpha = 1;
+
+        return true;
+      });
+    }
+  }, [fullMode, spawnDoge]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

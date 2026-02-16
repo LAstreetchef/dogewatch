@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { isValidAddress } from '@/lib/dogecoin/wallet';
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     }
     
     // If wallet exists but has no real address, generate one
-    if (wallet && (!wallet.doge_address || !wallet.doge_address.startsWith('D') || wallet.doge_address.length !== 34)) {
+    if (wallet && (!wallet.doge_address || !isValidAddress(wallet.doge_address))) {
       const generateRes = await fetch(new URL('/api/wallet/generate', request.url).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

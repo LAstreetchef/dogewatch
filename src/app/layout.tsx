@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { ErrorSuppressor } from "@/components/ErrorSuppressor";
+import MatrixRainWrapper from "@/components/MatrixRainWrapper";
 
 export const metadata: Metadata = {
   title: "DogeWatch — Crowdsourced Medicaid Fraud Detection",
@@ -47,6 +48,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-doge-bg text-doge-text antialiased min-h-screen">
         <ErrorSuppressor />
+        <MatrixRainWrapper />
         <AuthProvider>
           {children}
         </AuthProvider>

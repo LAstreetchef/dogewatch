@@ -20,6 +20,7 @@ import {
   Wallet as WalletIcon,
   History
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Transaction {
   id: string;
@@ -288,13 +289,12 @@ export default function WalletPage() {
 
             {showQR && (
               <div className="bg-white p-4 rounded-lg flex items-center justify-center">
-                {/* QR Code placeholder - would use a QR library */}
-                <div className="w-40 h-40 bg-doge-bg border-2 border-doge-border rounded flex items-center justify-center">
-                  <div className="text-center text-doge-muted text-xs p-2">
-                    <QrCode size={60} className="mx-auto mb-2 opacity-50" />
-                    QR for<br/>{wallet.doge_address.slice(0, 12)}...
-                  </div>
-                </div>
+                <QRCodeSVG 
+                  value={`dogecoin:${wallet.doge_address}`}
+                  size={160}
+                  level="M"
+                  includeMargin={true}
+                />
               </div>
             )}
 

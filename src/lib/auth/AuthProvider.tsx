@@ -67,20 +67,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Auto-create wallet if it doesn't exist
       if (walletError && walletError.code === 'PGRST116') {
-        const { data: newWallet, error: createError } = await supabase
-          .from('wallets')
-          .insert({
-            user_id: userId,
-            balance: 0,
-            total_earned: 0,
-            total_spent: 0,
-          })
-          .select()
-          .single();
-        
-        if (newWallet && !createError) {
-          walletData = newWallet;
-          walletError = null;
+        console.log('[Auth] No wallet found, creating via API for user:', userId);
+        try {
+          const res = await fetch('/api/wallet/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId }),
+          });
+          const result = await res.json();
+          
+          if (result.wallet) {
+            console.log('[Auth] Wallet created successfully:', result.wallet);
+            walletData = result.wallet;
+            walletError = null;
+          } else {
+            console.error('[Auth] Wallet creation failed:', result.error);
+          }
+        } catch (apiErr) {
+          console.error('[Auth] Wallet API error:', apiErr);
         }
       }
       

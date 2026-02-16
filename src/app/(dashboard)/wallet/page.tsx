@@ -144,8 +144,8 @@ export default function WalletPage() {
       return;
     }
 
-    // Validate DOGE address format (starts with D, 34 chars)
-    if (!withdrawAddress.match(/^D[a-km-zA-HJ-NP-Z1-9]{33}$/)) {
+    // Validate DOGE address format (Base58, starts with D, 34 chars)
+    if (!withdrawAddress.match(/^D[1-9A-HJ-NP-Za-km-z]{33}$/)) {
       alert('Invalid DOGE address format');
       return;
     }

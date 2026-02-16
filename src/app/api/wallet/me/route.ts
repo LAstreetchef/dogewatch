@@ -42,21 +42,48 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    // Auto-create wallet if doesn't exist
+    // Auto-create wallet with real DOGE address if doesn't exist
     if (walletError && walletError.code === 'PGRST116') {
-      const { data: newWallet, error: createError } = await serviceSupabase
-        .from('wallets')
-        .insert({
-          user_id: user.id,
-          balance: 0,
-          total_earned: 0,
-          total_spent: 0,
-        })
-        .select()
-        .single();
-
-      if (!createError && newWallet) {
-        wallet = newWallet;
+      // Generate real Dogecoin address
+      const generateRes = await fetch(new URL('/api/wallet/generate', request.url).toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      
+      if (generateRes.ok) {
+        // Fetch the newly created wallet
+        const { data: newWallet } = await serviceSupabase
+          .from('wallets')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (newWallet) {
+          wallet = newWallet;
+        }
+      }
+    }
+    
+    // If wallet exists but has no real address, generate one
+    if (wallet && (!wallet.doge_address || !wallet.doge_address.startsWith('D') || wallet.doge_address.length !== 34)) {
+      const generateRes = await fetch(new URL('/api/wallet/generate', request.url).toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      
+      if (generateRes.ok) {
+        // Refetch wallet with new address
+        const { data: updatedWallet } = await serviceSupabase
+          .from('wallets')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (updatedWallet) {
+          wallet = updatedWallet;
+        }
       }
     }
 

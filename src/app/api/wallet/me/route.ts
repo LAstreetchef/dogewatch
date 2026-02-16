@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { isValidAddress } from '@/lib/dogecoin/wallet';
+
+// Simple DOGE address validation (Base58 chars, starts with D, 34 chars)
+// Real Base58 excludes 0, O, I, l
+const BASE58_REGEX = /^D[1-9A-HJ-NP-Za-km-z]{33}$/;
+function isValidDogeAddress(address: string): boolean {
+  return BASE58_REGEX.test(address);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -67,7 +73,7 @@ export async function GET(request: NextRequest) {
     }
     
     // If wallet exists but has no real address, generate one
-    if (wallet && (!wallet.doge_address || !isValidAddress(wallet.doge_address))) {
+    if (wallet && (!wallet.doge_address || !isValidDogeAddress(wallet.doge_address))) {
       const generateRes = await fetch(new URL('/api/wallet/generate', request.url).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

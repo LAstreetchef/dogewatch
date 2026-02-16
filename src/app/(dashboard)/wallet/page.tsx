@@ -43,16 +43,48 @@ const txTypeConfig: Record<string, { icon: any; label: string; color: string }> 
 };
 
 export default function WalletPage() {
-  const { wallet, profile, refreshProfile } = useAuth();
+  const { user, wallet, profile, refreshProfile } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
 
   const supabase = createClient();
+
+  // Sync balance from blockchain on load
+  const syncBalance = async () => {
+    if (!user?.id) return;
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/wallet/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLiveBalance(data.balance);
+        // Also refresh profile to get updated wallet data
+        await refreshProfile();
+      }
+    } catch (err) {
+      console.error('Sync failed:', err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Auto-sync on mount
+  useEffect(() => {
+    if (user?.id && wallet?.doge_address) {
+      syncBalance();
+    }
+  }, [user?.id, wallet?.doge_address]);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -164,9 +196,20 @@ export default function WalletPage() {
       <Panel className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-doge-text">Your Wallet</h1>
-          <div className="flex items-center gap-2 text-sm text-doge-muted">
-            <span className="w-2 h-2 rounded-full bg-risk-low animate-pulse" />
-            Connected
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={syncBalance}
+              disabled={syncing}
+              className="text-doge-muted hover:text-doge-gold"
+            >
+              {syncing ? '⟳ Syncing...' : '⟳ Sync'}
+            </Button>
+            <div className="flex items-center gap-2 text-sm text-doge-muted">
+              <span className="w-2 h-2 rounded-full bg-risk-low animate-pulse" />
+              Connected
+            </div>
           </div>
         </div>
 
@@ -177,7 +220,7 @@ export default function WalletPage() {
             <div className="flex items-baseline gap-3">
               <Logo size={40} glow />
               <span className="text-5xl font-bold text-doge-gold font-mono">
-                {formatAmount(wallet.balance)}
+                {formatAmount(liveBalance ?? wallet.balance)}
               </span>
               <span className="text-2xl text-doge-muted">DOGE</span>
             </div>

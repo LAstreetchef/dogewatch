@@ -115,7 +115,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[Auth] Getting session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('[Auth] Session error:', error);
+        }
+        
+        console.log('[Auth] Session result:', session ? `User ${session.user.id}` : 'No session');
         
         if (!mounted) return;
         
@@ -123,12 +130,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('[Auth] Fetching profile for:', session.user.id);
           await fetchProfile(session.user.id);
         }
       } catch (err: any) {
         // Ignore AbortError - happens with React StrictMode double-mount
         if (err?.name === 'AbortError') return;
-        console.error('Error getting session:', err);
+        console.error('[Auth] Error getting session:', err);
       } finally {
         if (mounted) {
           setLoading(false);

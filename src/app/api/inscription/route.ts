@@ -9,6 +9,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Inscription fee in DOGE
+const INSCRIPTION_FEE_DOGE = 0.1;
+
 interface InscriptionRequest {
   tipId: string;
   providerNpi: string;
@@ -44,6 +47,58 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+
+    // Check user's wallet balance
+    const { data: wallet, error: walletError } = await supabase
+      .from('wallets')
+      .select('balance')
+      .eq('user_id', body.userId)
+      .single();
+
+    if (walletError || !wallet) {
+      return NextResponse.json(
+        { error: 'Wallet not found. Please set up your wallet first.' },
+        { status: 400 }
+      );
+    }
+
+    if (wallet.balance < INSCRIPTION_FEE_DOGE) {
+      return NextResponse.json(
+        { 
+          error: 'Insufficient balance',
+          required: INSCRIPTION_FEE_DOGE,
+          current: wallet.balance,
+          message: `Inscription requires ${INSCRIPTION_FEE_DOGE} DOGE. Your balance: ${wallet.balance} DOGE`
+        },
+        { status: 402 } // Payment Required
+      );
+    }
+
+    // Deduct inscription fee from user's wallet
+    const { error: deductError } = await supabase
+      .from('wallets')
+      .update({ 
+        balance: wallet.balance - INSCRIPTION_FEE_DOGE,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', body.userId);
+
+    if (deductError) {
+      console.error('[Inscription] Failed to deduct fee:', deductError);
+      return NextResponse.json(
+        { error: 'Failed to process payment' },
+        { status: 500 }
+      );
+    }
+
+    // Log the transaction
+    await supabase.from('wallet_transactions').insert({
+      user_id: body.userId,
+      type: 'inscription_fee',
+      amount: -INSCRIPTION_FEE_DOGE,
+      description: `Inscription fee for tip ${body.tipId}`,
+      tip_id: body.tipId,
+    });
 
     // Step 1: Upload to IPFS
     console.log(`[Inscription] Uploading tip ${body.tipId} to IPFS...`);
@@ -136,6 +191,35 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[Inscription] Error:', error);
+    
+    // Refund the user if we already deducted the fee
+    if (body?.userId) {
+      try {
+        const { data: wallet } = await supabase
+          .from('wallets')
+          .select('balance')
+          .eq('user_id', body.userId)
+          .single();
+        
+        if (wallet) {
+          await supabase
+            .from('wallets')
+            .update({ balance: wallet.balance + INSCRIPTION_FEE_DOGE })
+            .eq('user_id', body.userId);
+          
+          await supabase.from('wallet_transactions').insert({
+            user_id: body.userId,
+            type: 'inscription_refund',
+            amount: INSCRIPTION_FEE_DOGE,
+            description: `Refund for failed inscription ${body.tipId}`,
+            tip_id: body.tipId,
+          });
+        }
+      } catch (refundError) {
+        console.error('[Inscription] Refund failed:', refundError);
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Inscription failed', details: String(error) },
       { status: 500 }

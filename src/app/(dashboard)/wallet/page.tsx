@@ -144,13 +144,14 @@ export default function WalletPage() {
       return;
     }
 
-    // Basic sanity check - server does full validation
-    if (!withdrawAddress.startsWith('D') || withdrawAddress.length !== 34) {
-      alert('Invalid DOGE address format (must start with D, 34 characters)');
+    // Clean and validate address
+    const cleanAddress = withdrawAddress.trim();
+    if (!cleanAddress.startsWith('D') || cleanAddress.length !== 34) {
+      alert(`Invalid DOGE address format.\nGot: "${cleanAddress}" (${cleanAddress.length} chars)\nExpected: starts with D, 34 characters`);
       return;
     }
 
-    if (!confirm(`Send ${amount} DOGE to ${withdrawAddress}?\n\nNetwork fee: ~1 DOGE\nThis cannot be undone.`)) {
+    if (!confirm(`Send ${amount} DOGE to ${cleanAddress}?\n\nNetwork fee: ~1 DOGE\nThis cannot be undone.`)) {
       return;
     }
 
@@ -162,7 +163,7 @@ export default function WalletPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          toAddress: withdrawAddress,
+          toAddress: cleanAddress,
           amount: amount,
         }),
       });
@@ -363,6 +364,7 @@ export default function WalletPage() {
             </div>
 
             <Button
+              type="button"
               variant="primary"
               className="w-full"
               onClick={handleWithdraw}

@@ -23,8 +23,13 @@ interface InscriptionRequest {
 }
 
 export async function POST(request: NextRequest) {
+  let userId: string | undefined;
+  let tipId: string | undefined;
+  
   try {
     const body: InscriptionRequest = await request.json();
+    userId = body.userId;
+    tipId = body.tipId;
     
     // Validate required fields
     if (!body.tipId || !body.providerNpi || !body.findings || !body.userId) {
@@ -193,26 +198,26 @@ export async function POST(request: NextRequest) {
     console.error('[Inscription] Error:', error);
     
     // Refund the user if we already deducted the fee
-    if (body?.userId) {
+    if (userId) {
       try {
         const { data: wallet } = await supabase
           .from('wallets')
           .select('balance')
-          .eq('user_id', body.userId)
+          .eq('user_id', userId)
           .single();
         
         if (wallet) {
           await supabase
             .from('wallets')
             .update({ balance: wallet.balance + INSCRIPTION_FEE_DOGE })
-            .eq('user_id', body.userId);
+            .eq('user_id', userId);
           
           await supabase.from('wallet_transactions').insert({
-            user_id: body.userId,
+            user_id: userId,
             type: 'inscription_refund',
             amount: INSCRIPTION_FEE_DOGE,
-            description: `Refund for failed inscription ${body.tipId}`,
-            tip_id: body.tipId,
+            description: `Refund for failed inscription ${tipId}`,
+            tip_id: tipId,
           });
         }
       } catch (refundError) {

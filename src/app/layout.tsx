@@ -48,7 +48,8 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-doge-bg text-doge-text antialiased min-h-screen">
         <ErrorSuppressor />
-        <MatrixRainWrapper />
+        {/* Temporarily disabled for debugging click issues */}
+        {/* <MatrixRainWrapper /> */}
         <AuthProvider>
           {children}
         </AuthProvider>

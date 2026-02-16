@@ -30,9 +30,9 @@ export default function MatrixRain({ fullMode = false, onToggle }: MatrixRainPro
 
     // Gold/yellow gradient for text
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, fullMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(255, 215, 0, 0.15)');
-    gradient.addColorStop(0.5, fullMode ? 'rgba(212, 160, 23, 0.8)' : 'rgba(212, 160, 23, 0.12)');
-    gradient.addColorStop(1, fullMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(255, 215, 0, 0.08)');
+    gradient.addColorStop(0, fullMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(255, 215, 0, 0.25)');
+    gradient.addColorStop(0.5, fullMode ? 'rgba(212, 160, 23, 0.8)' : 'rgba(212, 160, 23, 0.2)');
+    gradient.addColorStop(1, fullMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(255, 215, 0, 0.15)');
     
     ctx.fillStyle = gradient;
     ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
@@ -59,8 +59,8 @@ export default function MatrixRain({ fullMode = false, onToggle }: MatrixRainPro
         dropsRef.current[i] = 0;
       }
       
-      // Move drop down
-      dropsRef.current[i] += fullMode ? 1 : 0.5;
+      // Move drop down (slower for readability)
+      dropsRef.current[i] += fullMode ? 0.4 : 0.2;
     }
   }, [fullMode]);
 

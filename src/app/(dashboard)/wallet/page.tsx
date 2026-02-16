@@ -131,11 +131,16 @@ export default function WalletPage() {
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || !withdrawAddress || !wallet) return;
+    if (!withdrawAmount || !withdrawAddress || !user) return;
     
     const amount = parseFloat(withdrawAmount);
-    if (isNaN(amount) || amount <= 0 || amount > wallet.balance) {
+    if (isNaN(amount) || amount <= 0) {
       alert('Invalid amount');
+      return;
+    }
+
+    if (amount < 10) {
+      alert('Minimum withdrawal is 10 DOGE');
       return;
     }
 
@@ -145,35 +150,49 @@ export default function WalletPage() {
       return;
     }
 
+    if (!confirm(`Send ${amount} DOGE to ${withdrawAddress}?\n\nNetwork fee: ~1 DOGE\nThis cannot be undone.`)) {
+      return;
+    }
+
     setWithdrawing(true);
     
-    // Create pending transaction
-    const { error } = await supabase
-      .from('transactions')
-      .insert({
-        wallet_id: wallet.id,
-        type: 'withdrawal',
-        amount: -amount,
-        description: `Withdrawal to ${withdrawAddress.slice(0, 8)}...`,
-        status: 'pending'
+    try {
+      const res = await fetch('/api/wallet/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          toAddress: withdrawAddress,
+          amount: amount,
+        }),
       });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        alert(data.error || 'Withdrawal failed');
+        return;
+      }
 
-    if (error) {
-      alert('Failed to initiate withdrawal');
-    } else {
+      alert(`✅ Sent ${amount} DOGE!\n\nTx: ${data.txHash.slice(0, 16)}...\n\nView on DogeChain explorer.`);
       setWithdrawAmount('');
       setWithdrawAddress('');
-      // Refresh to show new pending tx
-      const { data } = await supabase
+      
+      // Sync balance and refresh transactions
+      await syncBalance();
+      const { data: txs } = await supabase
         .from('transactions')
         .select('*')
-        .eq('wallet_id', wallet.id)
+        .eq('wallet_id', wallet?.id)
         .order('created_at', { ascending: false })
         .limit(50);
-      if (data) setTransactions(data);
+      if (txs) setTransactions(txs);
+      
+    } catch (err: any) {
+      alert(err.message || 'Withdrawal failed');
+    } finally {
+      setWithdrawing(false);
     }
-    
-    setWithdrawing(false);
   };
 
   if (!wallet) {

@@ -27,26 +27,43 @@ function isAdmin(request: NextRequest): boolean {
 /**
  * GET - Get treasury wallet info
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Get treasury wallet from DB
-    const { data: wallet } = await supabase
-      .from('wallets')
-      .select('*')
-      .eq('user_id', PLATFORM_USER_ID)
+    // Get treasury info from platform_settings
+    const { data: addrSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'treasury_address')
       .single();
 
-    if (!wallet) {
+    const { data: indexSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'treasury_derivation_index')
+      .single();
+
+    const { data: balanceSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'treasury_balance')
+      .single();
+
+    const address = addrSetting?.value ? JSON.parse(addrSetting.value) : null;
+    
+    if (!address || address === 'null') {
       return NextResponse.json({
         initialized: false,
         message: 'Treasury wallet not initialized. POST to create.',
       });
     }
 
+    const derivationIndex = indexSetting?.value ? JSON.parse(indexSetting.value) : TREASURY_INDEX;
+    const dbBalance = balanceSetting?.value ? JSON.parse(balanceSetting.value) : 0;
+
     // Get on-chain balance
     let onChainBalance = 0;
     try {
-      onChainBalance = await getBalanceInDoge(wallet.doge_address);
+      onChainBalance = await getBalanceInDoge(address);
     } catch (e) {
       console.error('[Treasury] Failed to fetch on-chain balance:', e);
     }
@@ -76,13 +93,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       initialized: true,
       treasury: {
-        userId: PLATFORM_USER_ID,
-        address: wallet.doge_address,
-        derivationIndex: wallet.derivation_index,
-        dbBalance: wallet.balance,
+        address,
+        derivationIndex,
+        dbBalance,
         onChainBalance,
-        totalEarned: wallet.total_earned,
-        totalSpent: wallet.total_spent,
       },
       revenue: {
         totalFeesCollected,
@@ -99,6 +113,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST - Initialize treasury wallet (admin only, one-time)
+ * Stores treasury info in platform_settings (not wallets table) to avoid FK issues
  */
 export async function POST(request: NextRequest) {
   if (!isAdmin(request)) {
@@ -113,53 +128,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already exists
-    const { data: existing } = await supabase
-      .from('wallets')
-      .select('id, doge_address')
-      .eq('user_id', PLATFORM_USER_ID)
+    // Check if already exists in settings
+    const { data: existingAddr } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'treasury_address')
       .single();
 
-    if (existing) {
+    if (existingAddr?.value && existingAddr.value !== 'null') {
+      const addr = JSON.parse(existingAddr.value);
       return NextResponse.json({
         message: 'Treasury wallet already initialized',
-        address: existing.doge_address,
+        address: addr,
       });
     }
 
-    // Derive treasury address at index 0
+    // Derive treasury address at reserved index
     const derived = deriveAddress(MASTER_MNEMONIC, TREASURY_INDEX);
 
     console.log(`[Treasury] Creating treasury wallet at index ${TREASURY_INDEX}: ${derived.address}`);
 
-    // Create treasury wallet
-    const { data: wallet, error: walletError } = await supabase
-      .from('wallets')
-      .insert({
-        user_id: PLATFORM_USER_ID,
-        doge_address: derived.address,
-        derivation_index: TREASURY_INDEX,
-        balance: 0,
-        total_earned: 0,
-        total_spent: 0,
-      })
-      .select()
-      .single();
-
-    if (walletError) {
-      console.error('[Treasury] Failed to create wallet:', walletError);
-      return NextResponse.json({ error: walletError.message }, { status: 500 });
-    }
-
-    // Update platform settings
-    await supabase
-      .from('platform_settings')
-      .upsert({
-        key: 'platform_wallet_user_id',
-        value: JSON.stringify(PLATFORM_USER_ID),
-        updated_at: new Date().toISOString(),
-      });
-
+    // Store treasury info in platform_settings (avoids FK constraint on wallets table)
     await supabase
       .from('platform_settings')
       .upsert({
@@ -168,11 +157,26 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       });
 
+    await supabase
+      .from('platform_settings')
+      .upsert({
+        key: 'treasury_derivation_index',
+        value: JSON.stringify(TREASURY_INDEX),
+        updated_at: new Date().toISOString(),
+      });
+
+    await supabase
+      .from('platform_settings')
+      .upsert({
+        key: 'treasury_balance',
+        value: JSON.stringify(0),
+        updated_at: new Date().toISOString(),
+      });
+
     return NextResponse.json({
       success: true,
       message: 'Treasury wallet initialized',
       treasury: {
-        userId: PLATFORM_USER_ID,
         address: derived.address,
         derivationIndex: TREASURY_INDEX,
       },

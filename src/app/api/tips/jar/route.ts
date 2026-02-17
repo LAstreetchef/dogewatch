@@ -82,25 +82,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Credit treasury wallet
-    const { data: platformWallet } = await supabase
-      .from('wallets')
-      .select('balance, total_earned')
-      .eq('user_id', PLATFORM_USER_ID)
+    // Credit treasury (stored in platform_settings)
+    const { data: balanceSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'treasury_balance')
       .single();
 
-    if (platformWallet) {
-      await supabase
-        .from('wallets')
-        .update({
-          balance: (platformWallet.balance || 0) + tipAmount,
-          total_earned: (platformWallet.total_earned || 0) + tipAmount,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', PLATFORM_USER_ID);
-    } else {
-      console.warn('[Tip Jar] Treasury wallet not initialized');
-    }
+    const currentBalance = balanceSetting?.value ? JSON.parse(balanceSetting.value) : 0;
+    
+    await supabase
+      .from('platform_settings')
+      .upsert({
+        key: 'treasury_balance',
+        value: JSON.stringify(currentBalance + tipAmount),
+        updated_at: new Date().toISOString(),
+      });
 
     // Record as a tip with platform as recipient
     const { data: tip } = await supabase

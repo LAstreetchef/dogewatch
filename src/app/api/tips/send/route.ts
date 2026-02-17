@@ -167,25 +167,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Credit platform fee to treasury wallet
-    const { data: platformWallet } = await supabase
-      .from('wallets')
-      .select('balance, total_earned')
-      .eq('user_id', platformWalletUserId)
+    // 3. Credit platform fee to treasury (stored in platform_settings)
+    const { data: balanceSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'treasury_balance')
       .single();
 
-    if (platformWallet) {
-      await supabase
-        .from('wallets')
-        .update({
-          balance: (platformWallet.balance || 0) + platformFee,
-          total_earned: (platformWallet.total_earned || 0) + platformFee,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', platformWalletUserId);
-    } else {
-      console.warn('[Tips] Treasury wallet not initialized - fee not credited');
-    }
+    const currentBalance = balanceSetting?.value ? JSON.parse(balanceSetting.value) : 0;
+    
+    await supabase
+      .from('platform_settings')
+      .upsert({
+        key: 'treasury_balance',
+        value: JSON.stringify(currentBalance + platformFee),
+        updated_at: new Date().toISOString(),
+      });
 
     // 4. Record the tip
     const { data: tip, error: tipError } = await supabase

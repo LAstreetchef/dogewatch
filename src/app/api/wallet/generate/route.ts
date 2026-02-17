@@ -9,7 +9,12 @@ const supabase = createClient(
 );
 
 // Master mnemonic for HD wallet derivation - MUST be set in env vars
-const MASTER_MNEMONIC = process.env.DOGE_MASTER_MNEMONIC;
+const MASTER_MNEMONIC = process.env.DOGE_MASTER_MNEMONIC?.replace(/\\n/g, '')?.replace(/\n/g, '')?.trim();
+
+// Reserved IDs and indices
+const PLATFORM_USER_ID = '00000000-0000-0000-0000-000000000000';
+const TREASURY_INDEX = 0; // Index 0 reserved for treasury
+const USER_START_INDEX = 1; // User wallets start at index 1
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,12 +46,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get the next derivation index
+    // Get the next derivation index (skip index 0, reserved for treasury)
     const { count } = await supabase
       .from('wallets')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .neq('user_id', PLATFORM_USER_ID); // Don't count treasury wallet
 
-    const index = count || 0;
+    // User wallets start at index 1 (index 0 = treasury)
+    const index = (count || 0) + USER_START_INDEX;
 
     // Derive real Dogecoin address
     const derived = deriveAddress(MASTER_MNEMONIC, index);

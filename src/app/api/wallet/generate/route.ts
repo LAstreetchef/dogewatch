@@ -13,8 +13,7 @@ const MASTER_MNEMONIC = process.env.DOGE_MASTER_MNEMONIC?.replace(/\\n/g, '')?.r
 
 // Reserved IDs and indices
 const PLATFORM_USER_ID = '00000000-0000-0000-0000-000000000000';
-const TREASURY_INDEX = 0; // Index 0 reserved for treasury
-const USER_START_INDEX = 1; // User wallets start at index 1
+const TREASURY_INDEX = 999999; // High index reserved for treasury
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,14 +45,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get the next derivation index (skip index 0, reserved for treasury)
+    // Get the next derivation index
     const { count } = await supabase
       .from('wallets')
       .select('*', { count: 'exact', head: true })
-      .neq('user_id', PLATFORM_USER_ID); // Don't count treasury wallet
+      .neq('user_id', PLATFORM_USER_ID) // Don't count treasury wallet
+      .neq('derivation_index', TREASURY_INDEX); // Don't count treasury index
 
-    // User wallets start at index 1 (index 0 = treasury)
-    const index = (count || 0) + USER_START_INDEX;
+    const index = count || 0;
 
     // Derive real Dogecoin address
     const derived = deriveAddress(MASTER_MNEMONIC, index);

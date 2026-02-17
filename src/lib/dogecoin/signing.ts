@@ -8,8 +8,13 @@ import bs58check from 'bs58check';
 
 const DOGE_WIF_PREFIX = 0x9e;
 
+// secp256k1 curve order
+const CURVE_ORDER = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141');
+const HALF_CURVE_ORDER = CURVE_ORDER / BigInt(2);
+
 /**
  * Sign transaction hashes with a WIF private key
+ * Produces low-S signatures per BIP 62
  */
 export async function signTransaction(
   tosign: string[],
@@ -22,12 +27,51 @@ export async function signTransaction(
     const hashBuffer = Buffer.from(hash, 'hex');
     const signature = ecc.sign(hashBuffer, privateKey);
     
+    // Ensure low-S (BIP 62)
+    const lowSSignature = ensureLowS(signature);
+    
     // Convert to DER format and then hex
-    const derSignature = signatureToDER(signature);
+    const derSignature = signatureToDER(lowSSignature);
     signatures.push(derSignature.toString('hex'));
   }
   
   return signatures;
+}
+
+/**
+ * Ensure the S value is in the lower half of the curve order (BIP 62)
+ */
+function ensureLowS(signature: Uint8Array): Uint8Array {
+  const r = signature.slice(0, 32);
+  const s = signature.slice(32, 64);
+  
+  const sBigInt = bytesToBigInt(s);
+  
+  if (sBigInt > HALF_CURVE_ORDER) {
+    // S is too high, negate it: newS = curveOrder - S
+    const newS = CURVE_ORDER - sBigInt;
+    const newSBytes = bigIntToBytes(newS);
+    return new Uint8Array([...r, ...newSBytes]);
+  }
+  
+  return signature;
+}
+
+function bytesToBigInt(bytes: Uint8Array): bigint {
+  let result = BigInt(0);
+  for (const byte of bytes) {
+    result = (result << BigInt(8)) | BigInt(byte);
+  }
+  return result;
+}
+
+function bigIntToBytes(num: bigint): Uint8Array {
+  const bytes = new Uint8Array(32);
+  for (let i = 31; i >= 0; i--) {
+    bytes[i] = Number(num & BigInt(0xff));
+    num >>= BigInt(8);
+  }
+  return bytes;
 }
 
 /**

@@ -39,8 +39,17 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
+    console.log('[Layout] Sign out clicked');
+    try {
+      await signOut();
+      console.log('[Layout] Sign out successful, redirecting...');
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      console.error('[Layout] Sign out error:', err);
+      // Force redirect anyway
+      window.location.href = '/';
+    }
   };
 
   if (loading) {

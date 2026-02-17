@@ -17,7 +17,7 @@ const MASTER_MNEMONIC = process.env.DOGE_MASTER_MNEMONIC
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'dogewatch-admin';
 const PLATFORM_USER_ID = '00000000-0000-0000-0000-000000000000'; // Reserved UUID
-const TREASURY_INDEX = 0; // Index 0 reserved for treasury
+const TREASURY_INDEX = 999999; // High index reserved for treasury (avoids conflict with early users)
 
 function isAdmin(request: NextRequest): boolean {
   const auth = request.headers.get('authorization');

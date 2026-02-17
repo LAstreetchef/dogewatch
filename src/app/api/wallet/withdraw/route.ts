@@ -11,7 +11,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const MASTER_MNEMONIC = process.env.DOGE_MASTER_MNEMONIC;
+// Clean the mnemonic - handle both actual newlines and literal "\n" strings
+const MASTER_MNEMONIC = process.env.DOGE_MASTER_MNEMONIC
+  ?.replace(/\\n/g, '')  // Remove literal \n
+  ?.replace(/\n/g, '')   // Remove actual newlines
+  ?.trim();
 const MIN_WITHDRAWAL = 10; // Minimum 10 DOGE
 const NETWORK_FEE = 1; // ~1 DOGE fee
 
@@ -67,6 +71,17 @@ export async function POST(request: NextRequest) {
 
     // Derive private key for this wallet
     const derived = deriveAddress(MASTER_MNEMONIC, wallet.derivation_index);
+
+    // Debug: verify derived address matches stored address
+    console.log(`[Withdraw] Derivation check: stored=${wallet.doge_address}, derived=${derived.address}, match=${wallet.doge_address === derived.address}`);
+    
+    if (wallet.doge_address !== derived.address) {
+      console.error(`[Withdraw] ADDRESS MISMATCH! Expected ${wallet.doge_address}, got ${derived.address}`);
+      return NextResponse.json({ 
+        error: `Internal error: key derivation mismatch. Please contact support.`,
+        debug: { stored: wallet.doge_address, derived: derived.address }
+      }, { status: 500 });
+    }
 
     console.log(`[Withdraw] Sending ${amountDoge} DOGE from ${wallet.doge_address} to ${toAddress}`);
 

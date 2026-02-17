@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     const bcData = await bcRes.json();
     
     // BlockCypher returns balance in satoshis (1 DOGE = 100,000,000 satoshis)
-    const balanceDoge = bcData.balance / 100000000;
+    // Use final_balance to include unconfirmed transactions
+    const balanceDoge = bcData.final_balance / 100000000;
     const totalReceivedDoge = bcData.total_received / 100000000;
     const totalSentDoge = bcData.total_sent / 100000000;
 

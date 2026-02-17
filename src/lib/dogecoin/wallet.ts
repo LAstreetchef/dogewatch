@@ -2,6 +2,7 @@
  * Dogecoin HD Wallet Library
  * 
  * Generates real Dogecoin addresses using BIP32/BIP44 derivation
+ * Uses @bitcoinerlab/secp256k1 (pure JS, works on Vercel)
  * 
  * Derivation path: m/44'/3'/0'/0/{index}
  * - 44' = BIP44
@@ -13,7 +14,7 @@
 
 import * as bip39 from 'bip39';
 import BIP32Factory from 'bip32';
-import * as ecc from 'tiny-secp256k1';
+import * as ecc from '@bitcoinerlab/secp256k1';
 import bs58check from 'bs58check';
 import { createHash } from 'crypto';
 

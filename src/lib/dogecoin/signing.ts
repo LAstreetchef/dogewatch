@@ -1,10 +1,10 @@
 /**
  * Transaction Signing for Dogecoin
+ * Uses @bitcoinerlab/secp256k1 (pure JS, works on Vercel)
  */
 
-import * as ecc from 'tiny-secp256k1';
+import * as ecc from '@bitcoinerlab/secp256k1';
 import bs58check from 'bs58check';
-import { createHash } from 'crypto';
 
 const DOGE_WIF_PREFIX = 0x9e;
 

@@ -21,10 +21,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('cases')
-    .select(`
-      *,
-      submitter:profiles!submitter_id(handle, display_name, avatar_emoji, tier)
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 

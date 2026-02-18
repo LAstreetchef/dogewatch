@@ -16,7 +16,8 @@ import {
   LogOut,
   Menu,
   X,
-  Heart
+  Heart,
+  Stamp
 } from 'lucide-react';
 import { useState } from 'react';
 import { TipJarButton } from '@/components/tips';
@@ -27,6 +28,7 @@ const navItems = [
   { href: '/sniffer', label: 'The Sniffer', icon: Search },
   { href: '/bloodhound', label: 'Bloodhound AI', icon: Dog },
   { href: '/cases', label: 'Case Files', icon: FolderOpen },
+  { href: '/inscription', label: 'Inscribe', icon: Stamp },
   { href: '/pack', label: 'Pack Rank', icon: Trophy },
   { href: '/wallet', label: 'Wallet', icon: Wallet },
   { href: '/devhouse', label: 'Dev House', icon: Heart },

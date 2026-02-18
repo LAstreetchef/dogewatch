@@ -6,6 +6,7 @@ import { BootScreen } from '@/components/ui/BootScreen';
 import { Logo, LogoWordmark } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
 import { Panel } from '@/components/ui/Panel';
+import { TipJarButton } from '@/components/tips';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -24,6 +25,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-doge-bg">
+      {/* Top bar with Support button */}
+      <div className="absolute top-4 right-4 z-50">
+        <TipJarButton variant="secondary" size="sm" />
+      </div>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Background gradient */}

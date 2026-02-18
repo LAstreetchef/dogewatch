@@ -17,8 +17,10 @@ import {
   Share2,
   Eye,
   Plus,
-  Dog
+  Dog,
+  Loader2
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import { 
   BarChart, 
   Bar, 
@@ -64,6 +66,7 @@ export default function ProviderDetailPage({
   const [billing, setBilling] = useState<BillingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCaseModal, setShowCaseModal] = useState(false);
   
   useEffect(() => {
     async function fetchProvider() {
@@ -215,7 +218,7 @@ export default function ProviderDetailPage({
                 <Eye size={16} />
                 Add to Watchlist
               </Button>
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" onClick={() => setShowCaseModal(true)}>
                 <Plus size={16} />
                 Open Case File
               </Button>
@@ -407,6 +410,170 @@ export default function ProviderDetailPage({
         <br />
         Anomaly scores calculated based on deviation from specialty peer averages.
       </div>
+
+      {/* Open Case Modal */}
+      {showCaseModal && (
+        <OpenCaseModal 
+          provider={provider}
+          onClose={() => setShowCaseModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function OpenCaseModal({ 
+  provider, 
+  onClose 
+}: { 
+  provider: Provider; 
+  onClose: () => void;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [title, setTitle] = useState(`${provider.name} - Investigation`);
+  const [summary, setSummary] = useState('');
+  const [evidence, setEvidence] = useState(`Provider: ${provider.name}
+NPI: ${provider.npi}
+State: ${provider.state}
+Specialty: ${provider.specialty || 'Unknown'}
+Anomaly Score: ${Math.round(provider.anomaly_score * 100)}%
+Total Billed: $${provider.total_billed.toLocaleString()}
+Total Claims: ${provider.total_claims.toLocaleString()}`);
+  const [bounty, setBounty] = useState('0');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    if (!user || !summary) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/cases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submitterId: user.id,
+          title,
+          summary,
+          evidence,
+          providerNpi: provider.npi,
+          providerName: provider.name,
+          bountyAmount: parseFloat(bounty) || 0,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      router.push('/cases');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+        <Panel className="relative w-full max-w-md p-6 z-10 text-center">
+          <p className="text-doge-muted mb-4">Sign in to open a case file</p>
+          <Button variant="primary" onClick={() => router.push('/login')}>
+            Sign In
+          </Button>
+        </Panel>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      
+      <Panel className="relative w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold text-doge-gold mb-4">Open Case File</h2>
+        
+        <div className="p-3 bg-risk-high/10 border border-risk-high/30 rounded-lg mb-4">
+          <p className="text-sm font-semibold text-doge-text">{provider.name}</p>
+          <p className="text-xs text-doge-muted">
+            NPI: {provider.npi} · {provider.state} · {Math.round(provider.anomaly_score * 100)}% Risk
+          </p>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-doge-muted mb-1">Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-doge-bg border border-doge-border rounded-lg px-3 py-2 text-doge-text"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-doge-muted mb-1">Summary *</label>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              rows={3}
+              className="w-full bg-doge-bg border border-doge-border rounded-lg px-3 py-2 text-doge-text resize-none"
+              placeholder="Describe what you found suspicious..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-doge-muted mb-1">Evidence (auto-filled)</label>
+            <textarea
+              value={evidence}
+              onChange={(e) => setEvidence(e.target.value)}
+              rows={4}
+              className="w-full bg-doge-bg border border-doge-border rounded-lg px-3 py-2 text-doge-text resize-none font-mono text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-doge-muted mb-1">Bounty (optional)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                value={bounty}
+                onChange={(e) => setBounty(e.target.value)}
+                className="w-32 bg-doge-bg border border-doge-border rounded-lg px-3 py-2 text-doge-text font-mono"
+              />
+              <span className="text-doge-muted">DOGE</span>
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-3 bg-risk-high/10 border border-risk-high rounded-lg text-risk-high text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button variant="ghost" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={handleSubmit} 
+              disabled={loading || !summary}
+              className="flex-1"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : 'Submit Case'}
+            </Button>
+          </div>
+        </div>
+
+        <p className="text-xs text-doge-muted text-center mt-4">
+          Case will be open for 72 hours of community verification.
+        </p>
+      </Panel>
     </div>
   );
 }

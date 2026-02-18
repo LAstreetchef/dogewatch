@@ -18,8 +18,29 @@ import {
   ThumbsUp,
   ThumbsDown,
   Timer,
-  Loader2
+  Loader2,
+  MessageSquare,
+  Shield,
+  FileText,
+  Send
 } from 'lucide-react';
+
+interface CaseResponse {
+  id: string;
+  case_id: string;
+  responder_id?: string;
+  response_type: 'comment' | 'defense' | 'evidence' | 'official';
+  content: string;
+  evidence_urls?: string[];
+  is_verified_party: boolean;
+  created_at: string;
+  responder?: {
+    handle: string;
+    display_name: string;
+    avatar_emoji: string;
+    tier: string;
+  };
+}
 
 interface Case {
   id: string;
@@ -384,6 +405,9 @@ function CaseCard({ caseData, onVote }: { caseData: Case; onVote: () => void }) 
               <p className="text-doge-muted text-sm">Sign in to vote on this case</p>
             </div>
           )}
+
+          {/* Discussion Section */}
+          <DiscussionSection caseId={caseData.id} />
         </div>
       )}
     </Panel>
@@ -561,6 +585,183 @@ function NewCaseModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
           Cases are open for 72 hours of community verification.
         </p>
       </Panel>
+    </div>
+  );
+}
+
+function DiscussionSection({ caseId }: { caseId: string }) {
+  const { user } = useAuth();
+  const [responses, setResponses] = useState<CaseResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [responseType, setResponseType] = useState<'comment' | 'defense' | 'evidence'>('comment');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchResponses();
+  }, [caseId]);
+
+  const fetchResponses = async () => {
+    try {
+      const res = await fetch(`/api/cases/respond?caseId=${caseId}`);
+      const data = await res.json();
+      setResponses(data.responses || []);
+    } catch (err) {
+      console.error('Failed to fetch responses:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
+    setSubmitting(true);
+
+    try {
+      const res = await fetch('/api/cases/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caseId,
+          responderId: user?.id,
+          responseType,
+          content: newComment,
+        }),
+      });
+
+      if (res.ok) {
+        setNewComment('');
+        fetchResponses();
+      }
+    } catch (err) {
+      console.error('Failed to submit response:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const responseTypeConfig = {
+    comment: { icon: MessageSquare, label: 'Comment', color: 'text-doge-muted' },
+    defense: { icon: Shield, label: 'Defense', color: 'text-blue-400' },
+    evidence: { icon: FileText, label: 'Evidence', color: 'text-doge-gold' },
+    official: { icon: CheckCircle, label: 'Official', color: 'text-risk-low' },
+  };
+
+  return (
+    <div className="mt-6 border-t border-doge-border pt-4">
+      <h4 className="text-sm font-semibold text-doge-text mb-4 flex items-center gap-2">
+        <MessageSquare size={16} />
+        Discussion ({responses.length})
+      </h4>
+
+      {/* Response Type Selector */}
+      <div className="flex gap-2 mb-3 flex-wrap">
+        {(['comment', 'defense', 'evidence'] as const).map((type) => {
+          const config = responseTypeConfig[type];
+          const Icon = config.icon;
+          return (
+            <button
+              key={type}
+              onClick={() => setResponseType(type)}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs border transition-all ${
+                responseType === type
+                  ? 'bg-doge-gold/20 border-doge-gold text-doge-gold'
+                  : 'border-doge-border text-doge-muted hover:border-doge-gold'
+              }`}
+            >
+              <Icon size={12} />
+              {config.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Comment Input */}
+      <div className="flex gap-2 mb-4">
+        <textarea
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder={
+            responseType === 'defense' 
+              ? "Present a counter-argument or defense..." 
+              : responseType === 'evidence'
+              ? "Add supporting evidence or analysis..."
+              : "Add your thoughts to the discussion..."
+          }
+          rows={2}
+          className="flex-1 bg-doge-bg border border-doge-border rounded-lg px-3 py-2 text-sm text-doge-text resize-none"
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSubmit}
+          disabled={submitting || !newComment.trim()}
+          className="self-end"
+        >
+          {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+        </Button>
+      </div>
+
+      {/* Responses List */}
+      {loading ? (
+        <div className="text-center py-4">
+          <Loader2 size={20} className="animate-spin text-doge-gold mx-auto" />
+        </div>
+      ) : responses.length === 0 ? (
+        <p className="text-sm text-doge-muted text-center py-4">
+          No discussion yet. Be the first to weigh in!
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {responses.map((response) => {
+            const config = responseTypeConfig[response.response_type];
+            const Icon = config.icon;
+            return (
+              <div 
+                key={response.id} 
+                className={`p-3 rounded-lg border ${
+                  response.response_type === 'defense' 
+                    ? 'bg-blue-500/5 border-blue-500/20' 
+                    : response.response_type === 'evidence'
+                    ? 'bg-doge-gold/5 border-doge-gold/20'
+                    : 'bg-doge-panel border-doge-border'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon size={12} className={config.color} />
+                  <span className={`text-xs font-medium ${config.color}`}>
+                    {config.label}
+                  </span>
+                  {response.responder && (
+                    <>
+                      <span className="text-doge-muted">·</span>
+                      <span className="text-xs text-doge-text">
+                        {response.responder.avatar_emoji} {response.responder.display_name}
+                      </span>
+                      <span className="text-xs text-doge-muted">
+                        @{response.responder.handle}
+                      </span>
+                    </>
+                  )}
+                  {!response.responder && (
+                    <span className="text-xs text-doge-muted">Anonymous</span>
+                  )}
+                  <span className="text-xs text-doge-muted ml-auto">
+                    {new Date(response.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-sm text-doge-text whitespace-pre-wrap">
+                  {response.content}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-xs text-doge-muted text-center mt-4">
+        All parties welcome. Present evidence, not attacks.
+      </p>
     </div>
   );
 }

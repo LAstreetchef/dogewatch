@@ -36,6 +36,7 @@ interface Provider {
   npi: string;
   name: string;
   state: string;
+  city?: string;
   specialty: string | null;
   anomaly_score: number;
   is_flagged: boolean;
@@ -43,6 +44,9 @@ interface Provider {
   total_claims: number;
   avg_monthly: number;
   data_updated_at: string | null;
+  procedure_diversity?: number;
+  top_procedure_code?: string;
+  top_procedure_pct?: number;
 }
 
 interface BillingRecord {
@@ -285,6 +289,82 @@ export default function ProviderDetailPage({
           <div className="text-sm text-doge-muted">Avg Per Claim</div>
         </Panel>
       </div>
+
+      {/* Procedure Analysis Panel */}
+      {(provider.procedure_diversity !== undefined || provider.top_procedure_code) && (
+        <Panel padding="lg">
+          <h2 className="text-lg font-semibold text-doge-gold mb-4">
+            🔬 Procedure Analysis
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Diversity Score */}
+            <div className="p-4 bg-doge-bg rounded-lg border border-doge-border">
+              <div className="text-sm text-doge-muted mb-1">Procedure Diversity</div>
+              <div className="flex items-center gap-2">
+                <div className={`text-2xl font-bold ${
+                  (provider.procedure_diversity || 0) < 0.3 ? 'text-risk-high' :
+                  (provider.procedure_diversity || 0) < 0.6 ? 'text-risk-moderate' :
+                  'text-risk-low'
+                }`}>
+                  {((provider.procedure_diversity || 0) * 100).toFixed(0)}%
+                </div>
+                <div className="text-xs text-doge-muted">
+                  {(provider.procedure_diversity || 0) < 0.3 ? '🚩 Low' :
+                   (provider.procedure_diversity || 0) < 0.6 ? '⚠️ Moderate' :
+                   '✅ Healthy'}
+                </div>
+              </div>
+              <div className="text-xs text-doge-muted mt-1">
+                More diverse = bills for many different services
+              </div>
+            </div>
+
+            {/* Top Procedure */}
+            {provider.top_procedure_code && (
+              <div className="p-4 bg-doge-bg rounded-lg border border-doge-border">
+                <div className="text-sm text-doge-muted mb-1">Top Procedure Code</div>
+                <div className="text-xl font-bold font-mono text-doge-gold">
+                  {provider.top_procedure_code}
+                </div>
+                <div className="text-xs text-doge-muted mt-1">
+                  Highest revenue service
+                </div>
+              </div>
+            )}
+
+            {/* Concentration */}
+            {provider.top_procedure_pct !== undefined && (
+              <div className="p-4 bg-doge-bg rounded-lg border border-doge-border">
+                <div className="text-sm text-doge-muted mb-1">Revenue Concentration</div>
+                <div className={`text-2xl font-bold ${
+                  provider.top_procedure_pct > 80 ? 'text-risk-high' :
+                  provider.top_procedure_pct > 50 ? 'text-risk-moderate' :
+                  'text-risk-low'
+                }`}>
+                  {provider.top_procedure_pct.toFixed(1)}%
+                </div>
+                <div className="text-xs text-doge-muted mt-1">
+                  {provider.top_procedure_pct > 80 ? '🚩 Very concentrated' :
+                   provider.top_procedure_pct > 50 ? '⚠️ Moderately concentrated' :
+                   '✅ Well distributed'}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Risk explanation */}
+          {(provider.procedure_diversity !== undefined && provider.procedure_diversity < 0.3) || 
+           (provider.top_procedure_pct !== undefined && provider.top_procedure_pct > 80) ? (
+            <div className="mt-4 p-3 bg-risk-high/10 border border-risk-high/30 rounded-lg">
+              <p className="text-sm text-risk-high">
+                <strong>⚠️ Concentration Warning:</strong> This provider bills heavily for a single procedure type. 
+                While this could indicate specialization, extremely concentrated billing is a common fraud pattern 
+                and warrants closer review.
+              </p>
+            </div>
+          ) : null}
+        </Panel>
+      )}
       
       {/* Billing Breakdown */}
       {billing.length > 0 && (

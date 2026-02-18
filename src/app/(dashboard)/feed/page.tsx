@@ -12,14 +12,17 @@ import {
   Share2, 
   TrendingUp,
   Clock,
-  Filter
+  Filter,
+  Coins
 } from 'lucide-react';
+import { TipButton } from '@/components/tips';
 
 // Mock feed data
 const mockPosts = [
   {
     id: '1',
     author: {
+      id: 'user-1',
       handle: 'shibasleuthhh',
       displayName: 'ShibaSleuth',
       tier: 'Bloodhound',
@@ -40,6 +43,7 @@ const mockPosts = [
   {
     id: '2',
     author: {
+      id: 'system',
       handle: 'dogewatch',
       displayName: 'DogeWatch',
       tier: 'Alpha',
@@ -59,6 +63,7 @@ const mockPosts = [
   {
     id: '3',
     author: {
+      id: 'user-3',
       handle: 'datadog42',
       displayName: 'DataDog',
       tier: 'Tracker',
@@ -218,6 +223,15 @@ function FeedPost({ post }: { post: typeof mockPosts[0] }) {
           <ActionButton icon={Heart} count={post.likeCount} />
           <ActionButton icon={MessageCircle} count={post.commentCount} />
           <ActionButton icon={Repeat2} count={post.repostCount} />
+          {/* Tip button - only show for non-system posts */}
+          {post.author.avatar !== 'system' && (
+            <TipButton
+              recipientId={post.author.id}
+              recipientName={post.author.displayName}
+              tipType="fraud_tip"
+              referenceId={post.id}
+            />
+          )}
         </div>
         <Button variant="ghost" size="sm" className="text-doge-gold">
           <Share2 size={16} /> Share to X

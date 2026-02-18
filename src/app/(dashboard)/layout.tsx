@@ -15,9 +15,11 @@ import {
   User,
   LogOut,
   Menu,
-  X
+  X,
+  Heart
 } from 'lucide-react';
 import { useState } from 'react';
+import { TipJarButton } from '@/components/tips';
 
 const navItems = [
   { href: '/feed', label: 'Feed', icon: Home },
@@ -92,6 +94,11 @@ export default function DashboardLayout({
             );
           })}
         </nav>
+
+        {/* Support */}
+        <div className="px-4 mb-2">
+          <TipJarButton variant="ghost" size="sm" className="w-full justify-start text-doge-muted hover:text-doge-gold" />
+        </div>
 
         {/* User section */}
         <div className="p-4 border-t border-doge-border space-y-2">

@@ -51,7 +51,7 @@ const features: Feature[] = [
     icon: Bell,
     progress: 40,
     tipTarget: 500,
-    tipsReceived: 125,
+    tipsReceived: 0,
   },
   {
     id: 'social-share',
@@ -61,7 +61,7 @@ const features: Feature[] = [
     icon: MessageSquare,
     progress: 25,
     tipTarget: 300,
-    tipsReceived: 45,
+    tipsReceived: 0,
   },
   
   // Up Next
@@ -72,7 +72,7 @@ const features: Feature[] = [
     status: 'next',
     icon: Trophy,
     tipTarget: 1000,
-    tipsReceived: 200,
+    tipsReceived: 0,
   },
   {
     id: 'pack-collab',
@@ -81,7 +81,7 @@ const features: Feature[] = [
     status: 'next',
     icon: Users,
     tipTarget: 750,
-    tipsReceived: 50,
+    tipsReceived: 0,
   },
   {
     id: 'ai-patterns',
@@ -90,7 +90,7 @@ const features: Feature[] = [
     status: 'next',
     icon: Brain,
     tipTarget: 2000,
-    tipsReceived: 350,
+    tipsReceived: 0,
   },
   {
     id: 'state-drilldown',

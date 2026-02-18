@@ -137,8 +137,9 @@ export default function DashboardLayout({
               </h1>
             </div>
 
-            {/* Header right - Wallet Badge */}
-            <div className="flex items-center gap-4">
+            {/* Header right - Support + Wallet Badge */}
+            <div className="flex items-center gap-3">
+              <TipJarButton variant="secondary" size="sm" className="hidden sm:flex" />
               <WalletBadge 
                 balance={wallet?.balance || 0} 
                 onClick={() => router.push('/wallet')} 

@@ -18,10 +18,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('posts')
-    .select(`
-      *,
-      author:profiles!author_id(id, handle, display_name, avatar_emoji, tier)
-    `)
+    .select('*')
     .range(offset, offset + limit - 1);
 
   if (type) {
@@ -99,10 +96,7 @@ export async function POST(request: NextRequest) {
         comment_count: 0,
         repost_count: 0,
       })
-      .select(`
-        *,
-        author:profiles!author_id(id, handle, display_name, avatar_emoji, tier)
-      `)
+      .select('*')
       .single();
 
     if (error) {

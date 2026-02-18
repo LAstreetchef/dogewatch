@@ -207,13 +207,9 @@ function FeedPost({ post }: { post: Post }) {
     <Panel className="hover:border-doge-gold/30 transition-colors">
       {/* Author header */}
       <div className="flex items-start gap-3 mb-3">
-        {isSystemPost ? (
-          <Logo size={40} glow />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-doge-border flex items-center justify-center text-xl">
-            {author.avatar_emoji || '🐕'}
-          </div>
-        )}
+        <div className="w-10 h-10 rounded-full bg-doge-border flex items-center justify-center">
+          <Logo size={28} glow={isSystemPost} />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-doge-text">

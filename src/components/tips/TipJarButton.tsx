@@ -87,7 +87,11 @@ export function TipJarButton({
         onClick={() => setIsOpen(true)}
         className={`gap-2 ${className}`}
       >
-        <Heart size={size === 'sm' ? 14 : size === 'md' ? 16 : 18} />
+        <img 
+          src="/images/dogebowl.png" 
+          alt="" 
+          className={size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'}
+        />
         Support DogeWatch
       </Button>
 

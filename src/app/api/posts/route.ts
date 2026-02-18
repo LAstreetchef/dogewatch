@@ -38,6 +38,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Fetch author profiles
+  if (posts && posts.length > 0) {
+    const authorIds = [...new Set(posts.map(p => p.author_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, handle, display_name, avatar_emoji, tier')
+      .in('id', authorIds);
+
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    
+    // Attach author info to posts
+    for (const post of posts) {
+      post.author = profileMap.get(post.author_id) || null;
+    }
+  }
+
   return NextResponse.json({ posts });
 }
 

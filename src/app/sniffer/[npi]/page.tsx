@@ -219,11 +219,11 @@ export default function ProviderDetailPage() {
       </div>
 
       {/* Procedure Analysis */}
-      {(provider.procedure_diversity !== undefined || provider.top_procedure_code) && (
+      {(provider.procedure_diversity != null || provider.top_procedure_code) && (
         <div className="bg-doge-panel border border-doge-border rounded-xl p-6">
           <h2 className="text-lg font-semibold text-doge-gold mb-4">🔬 Procedure Analysis</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {provider.procedure_diversity !== undefined && (
+            {provider.procedure_diversity != null && (
               <div className="p-4 bg-black/20 rounded-lg">
                 <div className="text-sm text-doge-muted mb-1">Procedure Diversity</div>
                 <div className={`text-2xl font-bold ${
@@ -246,7 +246,7 @@ export default function ProviderDetailPage() {
                 </div>
               </div>
             )}
-            {provider.top_procedure_pct !== undefined && (
+            {provider.top_procedure_pct != null && (
               <div className="p-4 bg-black/20 rounded-lg">
                 <div className="text-sm text-doge-muted mb-1">Revenue Concentration</div>
                 <div className={`text-2xl font-bold ${

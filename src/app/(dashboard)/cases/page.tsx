@@ -290,10 +290,10 @@ function CaseCard({ caseData, onVote }: { caseData: Case; onVote: () => void }) 
           <div className="flex justify-between text-xs text-doge-muted mb-1">
             <span className="flex items-center gap-1">
               <ThumbsUp size={12} className="text-risk-low" />
-              Valid ({caseData.valid_votes_count}) · {caseData.valid_stake_total.toFixed(1)} Ð
+              Valid ({caseData.valid_votes_count}) · {(caseData.valid_stake_total ?? 0).toFixed(1)} Ð
             </span>
             <span className="flex items-center gap-1">
-              {caseData.invalid_stake_total.toFixed(1)} Ð · ({caseData.invalid_votes_count}) Invalid
+              {(caseData.invalid_stake_total ?? 0).toFixed(1)} Ð · ({caseData.invalid_votes_count}) Invalid
               <ThumbsDown size={12} className="text-risk-high" />
             </span>
           </div>

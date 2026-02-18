@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Panel } from '@/components/ui/Panel';
 import { Button } from '@/components/ui/Button';
 import { Badge, PostTypeBadge, TierBadge } from '@/components/ui/Badge';
 import { Logo } from '@/components/ui/Logo';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import { 
   Heart, 
   MessageCircle, 
@@ -13,79 +14,53 @@ import {
   TrendingUp,
   Clock,
   Filter,
-  Coins
+  Coins,
+  Loader2
 } from 'lucide-react';
 import { TipButton } from '@/components/tips';
 
-// Mock feed data
-const mockPosts = [
-  {
-    id: '1',
-    author: {
-      id: 'user-1',
-      handle: 'shibasleuthhh',
-      displayName: 'ShibaSleuth',
-      tier: 'Bloodhound',
-      avatar: null,
-    },
-    type: 'finding',
-    title: 'Minnesota Autism Billing Anomaly — $847M Spike',
-    body: 'Identified a 340% increase in autism-related Medicaid claims in MN from 2020-2023. This mirrors the pattern discussed in recent investigations. Provider NPI 1234567890 shows $12M in billings concentrated in a single procedure code.\n\nKey findings:\n• 73% of claims from 3 providers\n• Average claim 5x state median\n• Geographic clustering in Twin Cities metro',
-    tags: ['Minnesota', 'Autism', 'Anomaly'],
-    bountyAmount: 500,
-    relatedProvider: { npi: '1234567890', name: 'Comfort Care Services', state: 'MN' },
-    likeCount: 127,
-    commentCount: 34,
-    repostCount: 18,
-    shareCount: 45,
-    createdAt: '2024-02-14T08:30:00Z',
-  },
-  {
-    id: '2',
-    author: {
-      id: 'system',
-      handle: 'dogewatch',
-      displayName: 'DogeWatch',
-      tier: 'Alpha',
-      avatar: 'system',
-    },
-    type: 'bounty',
-    title: '🏆 Weekly Bounty: Top Verifier Rewards',
-    body: 'This week\'s top verifiers earned a total of 2,450 DOGE for accurate case reviews!\n\n🥇 @cryptoauditor — 850 DOGE\n🥈 @fraudhunter99 — 620 DOGE\n🥉 @shibasleuthhh — 480 DOGE\n\nKeep sniffing, pack! Every verified report strengthens the network.',
-    tags: ['Bounty', 'Weekly'],
-    bountyAmount: 2450,
-    likeCount: 89,
-    commentCount: 12,
-    repostCount: 24,
-    shareCount: 67,
-    createdAt: '2024-02-13T12:00:00Z',
-  },
-  {
-    id: '3',
-    author: {
-      id: 'user-3',
-      handle: 'datadog42',
-      displayName: 'DataDog',
-      tier: 'Tracker',
-      avatar: null,
-    },
-    type: 'analysis',
-    title: 'Procedure Code 96153 — National Trend Analysis',
-    body: 'Built a dashboard analyzing billing patterns for procedure code 96153 (therapeutic interventions) across all 50 states. Notable outliers in MN, FL, and CA.\n\nInteractive chart attached — zoom into any state to see provider-level breakdowns.',
-    tags: ['Analysis', 'National', '96153'],
-    bountyAmount: 0,
-    hasChart: true,
-    likeCount: 203,
-    commentCount: 56,
-    repostCount: 41,
-    shareCount: 89,
-    createdAt: '2024-02-12T15:45:00Z',
-  },
-];
+interface Post {
+  id: string;
+  author_id: string;
+  type: string;
+  title?: string;
+  body: string;
+  tags: string[];
+  provider_npi?: string;
+  bounty_amount: number;
+  like_count: number;
+  comment_count: number;
+  repost_count: number;
+  created_at: string;
+  author?: {
+    id: string;
+    handle: string;
+    display_name: string;
+    avatar_emoji: string;
+    tier: string;
+  };
+}
 
 export default function FeedPage() {
   const [sortBy, setSortBy] = useState<'hot' | 'new'>('hot');
-  const [filterType, setFilterType] = useState<string | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch(`/api/posts?sort=${sortBy}`);
+      const data = await res.json();
+      setPosts(data.posts || []);
+    } catch (err) {
+      console.error('Failed to fetch posts:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, [sortBy]);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -111,46 +86,122 @@ export default function FeedPage() {
       </div>
 
       {/* Compose Box */}
-      <ComposeBox />
+      <ComposeBox onPostCreated={fetchPosts} />
 
       {/* Feed Posts */}
       <div className="space-y-4 mt-6">
-        {mockPosts.map((post) => (
-          <FeedPost key={post.id} post={post} />
-        ))}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 size={32} className="animate-spin text-doge-gold" />
+          </div>
+        ) : posts.length === 0 ? (
+          <Panel className="p-8 text-center">
+            <p className="text-doge-muted">No posts yet. Be the first to share!</p>
+          </Panel>
+        ) : (
+          posts.map((post) => (
+            <FeedPost key={post.id} post={post} />
+          ))
+        )}
       </div>
     </div>
   );
 }
 
-function ComposeBox() {
+function ComposeBox({ onPostCreated }: { onPostCreated: () => void }) {
+  const { user } = useAuth();
+  const [content, setContent] = useState('');
+  const [postType, setPostType] = useState<'finding' | 'analysis' | 'discussion'>('finding');
+  const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePost = async () => {
+    if (!user || !content.trim()) return;
+    setPosting(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authorId: user.id,
+          type: postType,
+          body: content,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setContent('');
+      onPostCreated();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <Panel className="text-center py-6">
+        <p className="text-doge-muted">Sign in to share findings</p>
+      </Panel>
+    );
+  }
+
   return (
     <Panel>
       <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
         placeholder="Share a finding, analysis, or start a discussion..."
         className="w-full bg-transparent border-none outline-none resize-none text-doge-text placeholder:text-doge-muted"
         rows={3}
       />
+      {error && (
+        <p className="text-risk-high text-sm mb-2">{error}</p>
+      )}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-doge-border">
         <div className="flex gap-2 flex-wrap">
-          <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
+          <Badge 
+            variant={postType === 'finding' ? 'gold' : 'default'} 
+            className="cursor-pointer hover:bg-doge-border"
+            onClick={() => setPostType('finding')}
+          >
             🔍 Finding
           </Badge>
-          <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
+          <Badge 
+            variant={postType === 'analysis' ? 'gold' : 'default'} 
+            className="cursor-pointer hover:bg-doge-border"
+            onClick={() => setPostType('analysis')}
+          >
             📊 Analysis
           </Badge>
-          <Badge variant="default" className="cursor-pointer hover:bg-doge-border">
+          <Badge 
+            variant={postType === 'discussion' ? 'gold' : 'default'} 
+            className="cursor-pointer hover:bg-doge-border"
+            onClick={() => setPostType('discussion')}
+          >
             💬 Discussion
           </Badge>
         </div>
-        <Button size="sm">Post</Button>
+        <Button 
+          size="sm" 
+          onClick={handlePost}
+          disabled={posting || !content.trim()}
+        >
+          {posting ? <Loader2 size={14} className="animate-spin" /> : 'Post'}
+        </Button>
       </div>
     </Panel>
   );
 }
 
-function FeedPost({ post }: { post: typeof mockPosts[0] }) {
-  const isSystemPost = post.author.avatar === 'system';
+function FeedPost({ post }: { post: Post }) {
+  const isSystemPost = post.author_id === '00000000-0000-0000-0000-000000000000';
+  const author = post.author || { id: post.author_id, handle: 'anonymous', display_name: 'Anonymous', avatar_emoji: '🐕', tier: 'Pup' };
   
   return (
     <Panel className="hover:border-doge-gold/30 transition-colors">
@@ -159,47 +210,49 @@ function FeedPost({ post }: { post: typeof mockPosts[0] }) {
         {isSystemPost ? (
           <Logo size={40} glow />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-doge-border flex items-center justify-center">
-            <Logo size={28} />
+          <div className="w-10 h-10 rounded-full bg-doge-border flex items-center justify-center text-xl">
+            {author.avatar_emoji || '🐕'}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-doge-text">
-              {post.author.displayName}
+              {author.display_name}
             </span>
             {isSystemPost && (
               <Badge variant="gold" size="sm">✓ Official</Badge>
             )}
-            <TierBadge tier={post.author.tier} />
+            <TierBadge tier={author.tier} />
             <span className="text-doge-muted text-sm">
-              @{post.author.handle}
+              @{author.handle}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <PostTypeBadge type={post.type} />
             <span className="text-doge-muted text-xs">
-              {new Date(post.createdAt).toLocaleDateString()}
+              {new Date(post.created_at).toLocaleDateString()}
             </span>
           </div>
         </div>
-        {post.bountyAmount > 0 && (
+        {post.bounty_amount > 0 && (
           <Badge variant="gold" size="md">
-            💰 {post.bountyAmount} Ð
+            💰 {post.bounty_amount} Ð
           </Badge>
         )}
       </div>
 
       {/* Content */}
-      <h3 className="font-doge text-lg font-semibold text-doge-text mb-2">
-        {post.title}
-      </h3>
+      {post.title && (
+        <h3 className="font-doge text-lg font-semibold text-doge-text mb-2">
+          {post.title}
+        </h3>
+      )}
       <p className="text-doge-muted whitespace-pre-line text-sm leading-relaxed">
         {post.body}
       </p>
 
       {/* Tags */}
-      {post.tags.length > 0 && (
+      {post.tags && post.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3">
           {post.tags.map((tag) => (
             <span key={tag} className="text-doge-gold text-sm">#{tag}</span>
@@ -208,33 +261,36 @@ function FeedPost({ post }: { post: typeof mockPosts[0] }) {
       )}
 
       {/* Related Provider */}
-      {post.relatedProvider && (
+      {post.provider_npi && (
         <div className="mt-3 p-2 bg-doge-bg rounded border border-doge-border">
           <span className="text-doge-muted text-xs">Related Provider:</span>
-          <span className="text-doge-gold text-sm ml-2 font-mono">
-            {post.relatedProvider.name} ({post.relatedProvider.state}) — NPI {post.relatedProvider.npi}
-          </span>
+          <a 
+            href={`/sniffer/${post.provider_npi}`}
+            className="text-doge-gold text-sm ml-2 font-mono hover:underline"
+          >
+            NPI {post.provider_npi}
+          </a>
         </div>
       )}
 
       {/* Actions */}
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-doge-border">
         <div className="flex items-center gap-4">
-          <ActionButton icon={Heart} count={post.likeCount} />
-          <ActionButton icon={MessageCircle} count={post.commentCount} />
-          <ActionButton icon={Repeat2} count={post.repostCount} />
+          <ActionButton icon={Heart} count={post.like_count} />
+          <ActionButton icon={MessageCircle} count={post.comment_count} />
+          <ActionButton icon={Repeat2} count={post.repost_count} />
           {/* Tip button - only show for non-system posts */}
-          {post.author.avatar !== 'system' && (
+          {!isSystemPost && author.id && (
             <TipButton
-              recipientId={post.author.id}
-              recipientName={post.author.displayName}
+              recipientId={author.id}
+              recipientName={author.display_name}
               tipType="fraud_tip"
               referenceId={post.id}
             />
           )}
         </div>
         <Button variant="ghost" size="sm" className="text-doge-gold">
-          <Share2 size={16} /> Share to X
+          <Share2 size={16} /> Share
         </Button>
       </div>
     </Panel>

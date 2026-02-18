@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Panel, Button, Badge } from '@/components/ui';
 import { 
   ArrowLeft, 
@@ -21,15 +21,44 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell 
-} from 'recharts';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Recharts to avoid SSR issues
+const RechartsComponents = dynamic(
+  () => import('recharts').then((mod) => ({
+    default: ({ data, maxBilling, formatCurrency, getBarColor }: any) => {
+      const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } = mod;
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: 60, right: 20 }}>
+            <XAxis type="number" tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} stroke="#8a7a5a" />
+            <YAxis 
+              type="category" 
+              dataKey="code" 
+              stroke="#8a7a5a" 
+              tick={{ fontSize: 12, fill: '#e8dcc8' }}
+            />
+            <Tooltip 
+              formatter={(value: number) => [formatCurrency(value), 'Amount']}
+              contentStyle={{ 
+                backgroundColor: '#1a1207', 
+                border: '1px solid #2a2215',
+                borderRadius: '8px',
+                color: '#e8dcc8'
+              }}
+            />
+            <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
+              {data.map((entry: any, index: number) => (
+                <Cell key={`cell-${index}`} fill={getBarColor(entry.amount, maxBilling)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+  })),
+  { ssr: false, loading: () => <div className="h-64 flex items-center justify-center text-doge-muted">Loading chart...</div> }
+);
 
 interface Provider {
   id: string;
@@ -58,12 +87,9 @@ interface BillingRecord {
   year: number;
 }
 
-export default function ProviderDetailPage({ 
-  params 
-}: { 
-  params: Promise<{ npi: string }> 
-}) {
-  const { npi } = use(params);
+export default function ProviderDetailPage() {
+  const params = useParams();
+  const npi = params?.npi as string;
   const router = useRouter();
   
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -73,6 +99,8 @@ export default function ProviderDetailPage({
   const [showCaseModal, setShowCaseModal] = useState(false);
   
   useEffect(() => {
+    if (!npi) return;
+    
     async function fetchProvider() {
       try {
         const res = await fetch(`/api/providers/${npi}`);
@@ -375,31 +403,12 @@ export default function ProviderDetailPage({
           
           {/* Chart */}
           <div className="h-64 mb-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 60, right: 20 }}>
-                <XAxis type="number" tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} stroke="#8a7a5a" />
-                <YAxis 
-                  type="category" 
-                  dataKey="code" 
-                  stroke="#8a7a5a" 
-                  tick={{ fontSize: 12, fill: '#e8dcc8' }}
-                />
-                <Tooltip 
-                  formatter={(value) => [formatCurrency(value as number), 'Amount']}
-                  contentStyle={{ 
-                    backgroundColor: '#1a1207', 
-                    border: '1px solid #2a2215',
-                    borderRadius: '8px',
-                    color: '#e8dcc8'
-                  }}
-                />
-                <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getBarColor(entry.amount, maxBilling)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <RechartsComponents 
+              data={chartData} 
+              maxBilling={maxBilling} 
+              formatCurrency={formatCurrency}
+              getBarColor={getBarColor}
+            />
           </div>
           
           {/* Table */}

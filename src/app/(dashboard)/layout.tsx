@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { TipJarButton } from '@/components/tips';
+import { Disclaimer } from '@/components/legal/Disclaimer';
 
 const navItems = [
   { href: '/feed', label: 'Feed', icon: Home },
@@ -195,6 +196,9 @@ export default function DashboardLayout({
         <main className="flex-1 p-4 md:p-6 bg-transparent">
           {children}
         </main>
+
+        {/* Legal Disclaimer Footer */}
+        <Disclaimer />
       </div>
     </div>
   );

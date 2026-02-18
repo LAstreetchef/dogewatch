@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { BootScreen } from '@/components/ui/BootScreen';
 import { Logo, LogoWordmark } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
@@ -112,6 +113,16 @@ export default function LandingPage() {
         <p className="text-doge-muted/50 text-xs font-mono mt-2">
           #DogeWatch #DOGE #MedicaidFraud #OpenData
         </p>
+        <div className="mt-6 pt-6 border-t border-doge-border">
+          <p className="text-xs text-doge-muted mb-2">
+            DogeWatch is an independent research platform. Statistical anomalies do not constitute accusations.
+          </p>
+          <div className="flex items-center justify-center gap-4 text-xs">
+            <Link href="/terms" className="text-doge-muted hover:text-doge-gold">Terms</Link>
+            <span className="text-doge-border">|</span>
+            <Link href="/privacy" className="text-doge-muted hover:text-doge-gold">Privacy</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );

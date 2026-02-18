@@ -145,7 +145,7 @@ export function TipModal({
               <div className="mb-4 p-3 bg-doge-bg rounded-lg border border-doge-border">
                 <div className="text-xs text-doge-muted mb-1">Your Balance</div>
                 <div className="font-mono font-bold text-doge-gold">
-                  {wallet.balance.toFixed(2)} DOGE
+                  {(wallet.balance ?? 0).toFixed(2)} DOGE
                 </div>
               </div>
             )}

@@ -359,7 +359,7 @@ function CaseCard({ caseData, onVote }: { caseData: Case; onVote: () => void }) 
                 <span className="text-doge-muted text-sm">DOGE</span>
                 {wallet && (
                   <span className="text-xs text-doge-muted ml-auto">
-                    Balance: {wallet.balance.toFixed(2)} Ð
+                    Balance: {(wallet.balance ?? 0).toFixed(2)} Ð
                   </span>
                 )}
               </div>
@@ -551,7 +551,7 @@ function NewCaseModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
               <span className="text-doge-muted">DOGE</span>
               {wallet && (
                 <span className="text-xs text-doge-muted ml-auto">
-                  Balance: {wallet.balance.toFixed(2)} Ð
+                  Balance: {(wallet.balance ?? 0).toFixed(2)} Ð
                 </span>
               )}
             </div>

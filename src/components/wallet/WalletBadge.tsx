@@ -8,10 +8,11 @@ interface WalletBadgeProps {
 }
 
 export function WalletBadge({ balance, onClick }: WalletBadgeProps) {
-  const formatBalance = (amt: number) => {
-    if (amt >= 1000000) return `${(amt / 1000000).toFixed(2)}M`;
-    if (amt >= 1000) return `${(amt / 1000).toFixed(1)}K`;
-    return amt.toFixed(2);
+  const formatBalance = (amt: number | null | undefined) => {
+    const val = amt ?? 0;
+    if (val >= 1000000) return `${(val / 1000000).toFixed(2)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
+    return val.toFixed(2);
   };
 
   return (

@@ -29,6 +29,7 @@ const navItems = [
   { href: '/cases', label: 'Case Files', icon: FolderOpen },
   { href: '/pack', label: 'Pack Rank', icon: Trophy },
   { href: '/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/devhouse', label: 'Dev House', icon: Heart },
 ];
 
 export default function DashboardLayout({

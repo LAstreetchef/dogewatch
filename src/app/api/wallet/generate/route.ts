@@ -103,8 +103,11 @@ export async function POST(request: NextRequest) {
       index,
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Wallet Generate] Error:', err);
-    return NextResponse.json({ error: 'Failed to generate wallet' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to generate wallet',
+      detail: err?.message || String(err)
+    }, { status: 500 });
   }
 }

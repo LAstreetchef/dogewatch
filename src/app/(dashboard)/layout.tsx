@@ -41,6 +41,9 @@ export default function DashboardLayout({
   const { user, profile, wallet, signOut, loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Public pages that don't require auth (sniffer is public for SEO/sharing)
+  const isPublicPage = pathname.startsWith('/sniffer');
+
   const handleSignOut = async () => {
     console.log('[Layout] Sign out clicked');
     try {
@@ -55,10 +58,45 @@ export default function DashboardLayout({
     }
   };
 
-  if (loading) {
+  // Show loading only for protected pages
+  if (loading && !isPublicPage) {
     return (
       <div className="min-h-screen bg-doge-bg flex items-center justify-center">
         <Logo size={60} sniff />
+      </div>
+    );
+  }
+  
+  // For public pages without auth, show simplified layout
+  if (!user && isPublicPage) {
+    return (
+      <div className="min-h-screen bg-doge-bg">
+        {/* Simple header for public pages */}
+        <header className="sticky top-0 z-40 bg-doge-panel/90 backdrop-blur-sm border-b border-doge-border">
+          <div className="flex items-center justify-between px-4 py-3 max-w-6xl mx-auto">
+            <Link href="/">
+              <LogoWordmark size={28} glow />
+            </Link>
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/login" 
+                className="px-4 py-2 text-sm font-medium text-doge-muted hover:text-doge-gold transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link 
+                href="/signup" 
+                className="px-4 py-2 text-sm font-medium bg-doge-gold text-doge-bg rounded-lg hover:bg-doge-gold/90 transition-colors"
+              >
+                Join the Pack
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main className="p-4 md:p-6">
+          {children}
+        </main>
+        <Disclaimer />
       </div>
     );
   }

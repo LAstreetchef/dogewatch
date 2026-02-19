@@ -127,7 +127,8 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-semibold text-doge-gold">11. Contact</h2>
               <p className="text-doge-muted">
-                For legal inquiries, contact us through the Platform's secure messaging system.
+                For legal inquiries, contact us at{' '}
+                <a href="mailto:md@dogedoctor.com" className="text-doge-gold hover:underline">md@dogedoctor.com</a>.
               </p>
             </section>
           </div>

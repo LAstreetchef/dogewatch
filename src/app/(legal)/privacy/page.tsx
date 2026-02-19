@@ -111,7 +111,8 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-xl font-semibold text-doge-gold">11. Contact</h2>
               <p className="text-doge-muted">
-                Privacy inquiries may be submitted through the Platform.
+                Privacy inquiries may be submitted to{' '}
+                <a href="mailto:md@dogedoctor.com" className="text-doge-gold hover:underline">md@dogedoctor.com</a>.
               </p>
             </section>
           </div>

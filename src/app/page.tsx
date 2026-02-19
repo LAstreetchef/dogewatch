@@ -121,6 +121,8 @@ export default function LandingPage() {
             <Link href="/terms" className="text-doge-muted hover:text-doge-gold">Terms</Link>
             <span className="text-doge-border">|</span>
             <Link href="/privacy" className="text-doge-muted hover:text-doge-gold">Privacy</Link>
+            <span className="text-doge-border">|</span>
+            <a href="mailto:md@dogedoctor.com" className="text-doge-muted hover:text-doge-gold">Contact</a>
           </div>
         </div>
       </footer>
